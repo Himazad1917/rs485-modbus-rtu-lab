@@ -23,6 +23,7 @@ jobs:
       - name: Check Markdown links
         uses: lycheeverse/lychee-action@v2
         with:
-          args: --verbose --no-progress './**/*.md'
+          # LinkedIn and Modbus.org may reject automated requests (HTTP 999/403); verify these manually.
+          args: --verbose --no-progress --exclude 'https://www.linkedin.com/.*' --exclude 'https://www.modbus.org/.*' './**/*.md'
           fail: true
           jobSummary: true
