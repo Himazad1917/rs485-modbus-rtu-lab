@@ -7,48 +7,55 @@ An educational reference for serial communication used by some industrial instru
 - **Modbus RTU** defines message framing and application-level function codes commonly carried over serial links.
 - RS485 does not by itself mean a device supports Modbus; verify the device manual.
 
-## Typical bus concept
-```mermaid
-flowchart LR
-  M[Master / client] ---|Differential pair| D1[Device 1]
-  M ---|Shared bus| D2[Device 2]
-  M ---|Shared bus| D3[Device 3]
-```
-Use a daisy-chain bus where recommended by the network design. Termination is generally applied at the two physical ends when required by cable, data rate, and equipment. Biasing should define the idle state; avoid duplicate bias networks without checking documentation. A/B labels are not perfectly consistent across vendors—confirm polarity from the specific manual.
+## Conceptual bus layout
 
-## Modbus RTU request/response
-```mermaid
+~~~mermaid
+flowchart LR
+  M[Master / gateway] --- B[RS485 bus]
+  B --- D1[Device 1]
+  B --- D2[Device 2]
+  B --- D3[Device 3]
+~~~
+
+The physical topology, termination, biasing, cable, loading, and grounding must follow the specific devices' documentation and applicable installation rules.
+
+## Request/response concept
+
+~~~mermaid
 sequenceDiagram
-  participant C as Client / master
-  participant S as Serial device / server
-  C->>S: Address + function + data + CRC
-  S->>S: Validate frame and request
-  S-->>C: Address + function + data + CRC
-  Note over C,S: Broadcast requests generally do not receive responses
-```
-A serial RTU frame includes a device address, function code, data, and CRC. Timing gaps help delimit frames. Responses depend on the requested function and device implementation.
+  participant M as Client / master
+  participant S as Instrument / server
+  M->>S: Address + function + data + CRC
+  S-->>M: Address + function + response data + CRC
+~~~
 
 ## Configuration checklist
-- Device address (unique on the bus)
-- Baud rate, parity, and stop bits
-- Supported function codes and register map
-- Register address convention, data type, signedness, scaling, byte/word order
-- Cable topology, pair polarity, termination and biasing
-- Timeout and retry settings
 
-## Example interpretation (illustrative only)
-A hypothetical register containing integer `234` with documented scale `0.1 °C` would represent `23.4 °C`. Never assume a scale or register meaning without the device's register map.
+- Confirm the protocol supported by the exact instrument model.
+- Match baud rate, parity, stop bits, and device address.
+- Use the manufacturer's register map, including data type, signedness, scaling, and word order.
+- Confirm wiring labels from both manuals; terminal naming conventions can differ.
+- Avoid duplicate addresses and follow the recommended bus topology.
+
+## Guides
+
+- [Gateway Connectivity Checklist](guides/gateway-connectivity-checklist.md) — RS485, analogue, Ethernet and LoRaWAN bring-up considerations
+
+## Illustrative scaling example
+
+A hypothetical register might encode a temperature in tenths of a degree. If a documented raw value were 246 and the manufacturer's map specified a scale of 0.1, the interpreted value would be 24.6 °C. This is only an arithmetic example; it is not a real device register or a recommended register address.
 
 ## Troubleshooting
+
 | Symptom | Checks |
 |---|---|
-| No response | Supply, wiring polarity, address, serial settings, supported function |
-| CRC errors | Noise, cable routing, grounding, baud rate, termination, frame timing |
-| Wrong value | Register offset convention, scaling, signedness, byte order, units |
-| Sporadic failures | Topology, duplicate addresses, bus loading, bias/termination design |
+| No response | Power, polarity/terminal labels, converter, serial settings, address and protocol |
+| CRC errors | Noise, wiring, settings mismatch, bus layout and termination |
+| Wrong value | Register map, units, scaling, signedness and word order |
+| Intermittent response | Address conflict, cabling, grounding, bus loading and timeout settings |
 
 ## References
-- [Modbus specifications](https://www.modbus.org/specs.php)
-- [Modbus Organization FAQ](https://www.modbus.org/faq)
 
-**Safety:** Follow equipment instructions and site procedures. **Status:** Learning/reference lab; no hardware test is claimed.
+- [Modbus specifications](https://www.modbus.org/specs.php)
+
+This repository is a learning reference, not evidence of physical device testing or a validated commissioning procedure.
